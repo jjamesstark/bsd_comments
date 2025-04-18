@@ -22,10 +22,15 @@ commentsdf = pd.read_json("comments.json")
 def flatten_listolist(listolist):
     return [x for xs in listolist for x in xs]
 
-topics = set(flatten_listolist(commentsdf['topics']))
-associations_with_bsd = set(commentsdf['association_with_bsd'])
-exploded_by_topics_df = commentsdf.explode('topics')
-topics_occurances = exploded_by_topics_df.groupby('topics')['topics'].value_counts().sort_values(ascending=False)
+
+topics = set(flatten_listolist(commentsdf["topics"]))
+associations_with_bsd = set(commentsdf["association_with_bsd"])
+exploded_by_topics_df = commentsdf.explode("topics")
+topics_occurances = (
+    exploded_by_topics_df.groupby("topics")["topics"]
+    .value_counts()
+    .sort_values(ascending=False)
+)
 
 
 with st.sidebar:
@@ -35,39 +40,58 @@ with st.sidebar:
         topics.append(topic[0])
 
     selected_topics = st.multiselect(
-        "Topics", topics
+        "Topics", topics, help="Topics sorted in order of occurances"
     )
 
     selected_assoc = st.multiselect(
-        "Association with SD", associations_with_bsd, [None, 'Other Community Member', 'Student', 'Staff Member', 'Parent/Guardian']
+        "Association with SD",
+        associations_with_bsd,
+        [None, "Other Community Member", "Student", "Staff Member", "Parent/Guardian"],
     )
 
-    
 
-selected_by_topics_ids = exploded_by_topics_df[exploded_by_topics_df['topics'].isin(selected_topics)]
-    
+selected_by_topics_ids = exploded_by_topics_df[
+    exploded_by_topics_df["topics"].isin(selected_topics)
+]
 
-selected_commentsdf  = commentsdf[commentsdf['association_with_bsd'].isin(selected_assoc)]
 
-selected_commentsdf = selected_commentsdf[selected_commentsdf['id'].isin(list(set(selected_by_topics_ids['id'].values)))]
+selected_commentsdf = commentsdf[
+    commentsdf["association_with_bsd"].isin(selected_assoc)
+]
 
-selected_comments_dict = selected_commentsdf.to_dict('records')
+selected_commentsdf = selected_commentsdf[
+    selected_commentsdf["id"].isin(list(set(selected_by_topics_ids["id"].values)))
+]
+
+selected_comments_dict = selected_commentsdf.to_dict("records")
 
 st.title("Selected Comments")
-for comment in selected_comments_dict:
 
-    date_string = comment['date'].strftime("%B %d, %Y")
+with st.container():
+    if len(selected_topics) == 0:
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader(f"{comment['first_name']}: {comment['association_with_bsd']}")
-        for topic in comment['topics']:
-            st.badge(f"{topic}")
+        st.text(
+            "This app is set up to browse the written public comments submitted to Beaverton School Board from March 2024 through Febuary 2025"
+        )
 
-    with col2:
-        st.text(f"{comment['comment']}")
-        st.caption(date_string)
-    
-    st.divider()
+        st.caption("select from the topics in the sidebar to see related comments")
 
+    else:
 
+        for comment in selected_comments_dict:
+
+            date_string = comment["date"].strftime("%B %d, %Y")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader(
+                    f"{comment['first_name']}: {comment['association_with_bsd']}"
+                )
+                for topic in comment["topics"]:
+                    st.badge(f"{topic}")
+
+            with col2:
+                st.text(f"{comment['comment']}")
+                st.caption(date_string)
+
+            st.divider()
