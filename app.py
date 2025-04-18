@@ -24,10 +24,16 @@ def flatten_listolist(listolist):
 
 topics = set(flatten_listolist(commentsdf['topics']))
 associations_with_bsd = set(commentsdf['association_with_bsd'])
+exploded_by_topics_df = commentsdf.explode('topics')
+topics_occurances = exploded_by_topics_df.groupby('topics')['topics'].value_counts().sort_values(ascending=False)
 
 
 with st.sidebar:
-     
+    topics = []
+
+    for topic in topics_occurances.items():
+        topics.append(topic[0])
+
     selected_topics = st.multiselect(
         "Topics", topics
     )
@@ -35,8 +41,9 @@ with st.sidebar:
     selected_assoc = st.multiselect(
         "Association with SD", associations_with_bsd, [None, 'Other Community Member', 'Student', 'Staff Member', 'Parent/Guardian']
     )
+
     
-exploded_by_topics_df = commentsdf.explode('topics')
+
 selected_by_topics_ids = exploded_by_topics_df[exploded_by_topics_df['topics'].isin(selected_topics)]
     
 
